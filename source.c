@@ -14,7 +14,7 @@ struct abc{
     GtkButton *btn;
     GtkProgressBar *bar;
     GtkSpinButton *spin;
-
+    GtkWindow *md3_window;
 };
 static GtkWidget *rb1, *rb2, *rb3, *emp_label;
 static const char *buttons[] = {"Hayır","Evet",NULL}; // !! ONEMLI NULL TERMINATED OLMASI GEREKIYOR. YOKSA UZUNLUGUNU BILINEMEZ.
@@ -24,8 +24,27 @@ static const char *buttons[] = {"Hayır","Evet",NULL}; // !! ONEMLI NULL TERMINA
 }*/
 
 static void md3_button_clicked(GtkButton *source, struct abc *data){
+    static gboolean lock = TRUE;
+
+    if(lock == TRUE){
+        lock = FALSE;
+        gtk_widget_set_sensitive(GTK_WIDGET(data->spin),lock);
+    }
+
     gtk_progress_bar_set_fraction(data->bar,gtk_progress_bar_get_fraction(data->bar) + // ILERLEME CUBUGUNUN ILERLETILMESI
     (1/gtk_spin_button_get_value(data->spin)));
+    g_print("%.12f\n",gtk_progress_bar_get_fraction(data->bar));
+
+    if(gtk_progress_bar_get_fraction(data->bar) >= 0.9999999){
+        lock = TRUE;
+        GtkAlertDialog *msgbox = gtk_alert_dialog_new("%s %u %s%s","TOPLAM",(unsigned int)gtk_spin_button_get_value(data->spin),"KERE TIKLAYARAK,\n","ISLEMI BASARIYLA TAMAMLADINIZ.");
+
+        gtk_progress_bar_set_fraction(data->bar,0);
+        gtk_spin_button_set_value(data->spin,1);
+        gtk_widget_set_sensitive(GTK_WIDGET(data->spin),lock);
+
+        gtk_alert_dialog_choose(msgbox,data->md3_window,NULL,NULL,NULL);
+    }
 }
 
 static void return_home(GtkWindow *home, GtkWindow *school){
@@ -73,7 +92,7 @@ static void select_day(GtkCalendar *cl, struct abc *d){
     }
 }
 
-static void clicked(struct abc *d){
+static void mode_selector(struct abc *d){
     //gtk_text_set_buffer(b->text,gtk_text_get_buffer(b->text));
 
     if(gtk_check_button_get_active(GTK_CHECK_BUTTON(rb1)) == TRUE){
@@ -121,7 +140,7 @@ static void clicked(struct abc *d){
 
 
         struct abc *temp_md3 = malloc(sizeof(struct abc));
-        *temp_md3 = (struct abc){.btn=GTK_BUTTON(button),.bar=GTK_PROGRESS_BAR(progress_bar),.spin=GTK_SPIN_BUTTON(spin_button)};
+        *temp_md3 = (struct abc){.btn=GTK_BUTTON(button),.bar=GTK_PROGRESS_BAR(progress_bar),.spin=GTK_SPIN_BUTTON(spin_button),.md3_window=GTK_WINDOW(md3_window)};
 
         gtk_grid_attach(GTK_GRID(grid),progress_bar,0,0,3,1);
         gtk_grid_attach(GTK_GRID(grid),box,3,0,1,1);
@@ -207,10 +226,10 @@ static void showed(GtkApplication *app, gpointer data){
     gtk_check_button_set_active(GTK_CHECK_BUTTON(rb1),TRUE);
 
     g_signal_connect(GTK_WINDOW(window),"close-request",G_CALLBACK(closing),NULL);
-    g_signal_connect_swapped(GTK_BUTTON(button1),"clicked",G_CALLBACK(clicked),temp);
+    g_signal_connect_swapped(GTK_BUTTON(button1),"clicked",G_CALLBACK(mode_selector),temp);
 
     gtk_window_present(GTK_WINDOW(window));
-    gtk_window_set_interactive_debugging(TRUE);
+    //gtk_window_set_interactive_debugging(TRUE);
 }
 
 int main(int argc,char **argv){
